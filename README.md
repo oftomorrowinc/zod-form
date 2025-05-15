@@ -515,6 +515,14 @@ const form = zodForm(schema, {
 
 See the [ZodForm Specification](zod-form-spec.md) for detailed documentation on all features and options.
 
+## Releasing a new package version
+
+- Increment the version number in package.json as appropriate
+- Run `npm run build` to ensure there are no errors
+- Run `npm run release`
+- Go to the project page on Github, go to releases, click draft a new release, select your tag, add a title/description and click publish
+- To update the dependency to the latest version number in projects using this package run `npm install git+https://github.com/oftomorrowinc/zod-form.git#v{version.number}`
+
 ## License
 
 MIT
