@@ -1,0 +1,67 @@
+extends layout
+
+block content
+  h1 ZodForm Modal Example
+  p Click the button below to open a modal contact form
+  
+  button.button#contact-form-button(hx-get="/api/contact-form" hx-target="#modal-container")
+    | Open Contact Form
+  
+  hr(style="margin: 20px 0; border-color: #333;")
+  
+  h2 Alternative buttons
+  p Try these if the main button doesn't work:
+  
+  a.button(href="/api/contact-form-raw" style="margin-right: 10px; text-decoration: none;")
+    | Open Form (New Page)
+  
+  button.button#fetch-form-button
+    | Open Form (Fetch API)
+
+block scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('fetch-form-button').addEventListener('click', function() {
+        var modalContainer = document.getElementById('modal-container');
+        var debugInfo = document.getElementById('debug-info');
+        
+        debugInfo.style.display = 'block';
+        debugInfo.innerHTML = 'Fetching form...';
+        
+        fetch('/api/contact-form')
+          .then(function(response) { return response.text(); })
+          .then(function(html) { 
+            modalContainer.innerHTML = html;
+            debugInfo.innerHTML += '<br>Form loaded successfully';
+          })
+          .catch(function(error) {
+            debugInfo.innerHTML += '<br>Error: ' + error;
+            debugInfo.style.color = 'red';
+          });
+      });
+      
+      // Ensure the modal button works even if HTMX doesn't initialize
+      const contactButton = document.getElementById('contact-form-button');
+      contactButton.addEventListener('click', function() {
+        console.log('Contact button clicked');
+        
+        // Show debug info
+        document.getElementById('debug-info').style.display = 'block';
+        document.getElementById('debug-info').innerHTML = 'Button clicked manually';
+        
+        // Try manual fetch if HTMX isn't working
+        if (!window.htmx || !contactButton.getAttribute('hx-get')) {
+          fetch('/api/contact-form')
+            .then(response => response.text())
+            .then(html => {
+              document.getElementById('modal-container').innerHTML = html;
+              document.getElementById('debug-info').innerHTML += '<br>Fetched modal manually';
+            })
+            .catch(error => {
+              console.error('Error fetching modal:', error);
+              document.getElementById('debug-info').innerHTML += '<br>Error: ' + error;
+              document.getElementById('debug-info').style.color = 'red';
+            });
+        }
+      });
+    });

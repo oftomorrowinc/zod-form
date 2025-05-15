@@ -1,19 +1,20 @@
 # ZodForm
 
-A highly opinionated, dark-themed form generation and validation library for Node.js applications using HTMX, Express, and Zod.
+A highly opinionated, dark-themed form generation and validation library for Node.js applications using HTMX, Express, Pug, and Zod.
 
 ## Overview
 
-ZodForm transforms Zod schemas into beautiful, responsive forms with built-in validation. The library generates server-rendered HTML forms with HTMX enhancements for real-time validation and dynamic updates without full page reloads. The package provides a clean, dark-themed UI that can be seamlessly integrated into Firebase-backed applications.
+ZodForm transforms Zod schemas into beautiful, responsive forms with built-in validation. The library generates server-rendered HTML forms with Pug templates and HTMX enhancements for real-time validation and dynamic updates without full page reloads. The package provides a clean, dark-themed UI that can be seamlessly integrated into Firebase-backed applications.
 
 ## Key Features
 
 - **Zod Schema to HTML Form**: Automatic form generation from Zod schemas
+- **Pug Template Integration**: Seamless integration with Pug templates for clean, maintainable views
 - **Dark Theme by Default**: Modern, accessible dark UI with customization options
 - **HTMX Integration**: Progressive enhancement for seamless form interactions
 - **Server-Side Validation**: Express middleware for Zod validation
 - **Client-Side Validation**: Browser-side validation using Zod in the browser
-- **Custom Elements**: Rich set of form elements including selects, multi-selects, date pickers, etc.
+- **Custom Elements**: Rich set of form elements including star ratings, file uploads with preview, etc.
 - **Modal Support**: Ready-to-use modal dialogs for forms
 - **Firebase Integration**: Helper functions for storing schemas in Firestore
 - **Form Submission Handling**: Express routes for handling form submissions
@@ -27,16 +28,23 @@ npm install zod-form
 
 ## Basic Usage
 
-### Server-Side Setup (Express)
+### Server-Side Setup with Pug (Recommended)
+
+ZodForm works seamlessly with Pug templates, which is the recommended way to use it in Express applications.
 
 ```javascript
 const express = require('express');
+const path = require('path');
 const { zodForm } = require('zod-form');
 const { z } = require('zod');
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Set up Pug as the view engine
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
 
 // Define a Zod schema
 const userSchema = z.object({
@@ -58,24 +66,11 @@ app.get('/user-form', (req, res) => {
     layout: 'vertical' // or 'horizontal'
   });
   
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>User Form</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        ${form.styles}
-        <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-      </head>
-      <body class="zf-dark">
-        <div class="zf-container">
-          <h1>Create New User</h1>
-          ${form.html}
-        </div>
-        ${form.scripts}
-      </body>
-    </html>
-  `);
+  // Render the form using Pug
+  res.render('user-form', {
+    title: 'User Form',
+    form: form
+  });
 });
 
 // For file uploads
@@ -103,11 +98,9 @@ app.post('/api/submit-user', upload.single('avatar'), zodForm.validate(userSchem
   
   // Return a response that HTMX can use
   if (req.headers['hx-request']) {
-    res.send(`
-      <div class="zf-alert zf-alert-success">
-        User created successfully!
-      </div>
-    `);
+    res.render('partials/success', { 
+      message: 'User created successfully!' 
+    });
   } else {
     res.redirect('/users');
   }
@@ -118,29 +111,198 @@ app.listen(3000, () => {
 });
 ```
 
-## Modal Forms
+### Pug Templates
+
+Create the following Pug templates to work with ZodForm:
+
+#### `views/layout.pug`
+```pug
+doctype html
+html
+  head
+    title= title
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    script(src="https://unpkg.com/htmx.org@1.9.3")
+    block styles
+  body.zf-dark
+    .zf-container
+      block content
+    block scripts
+```
+
+#### `views/user-form.pug`
+```pug
+extends layout
+
+block styles
+  != form.styles
+
+block content
+  h1 Create New User
+  p Fill out the form below to create a new user account.
+  
+  != form.html
+  #form-response
+
+block scripts
+  != form.scripts
+```
+
+#### `views/partials/success.pug`
+```pug
+.zf-alert.zf-alert-success
+  h3 Success!
+  p= message
+```
+
+### Traditional HTML Output
+
+If you prefer to use raw HTML instead of Pug templates, you can still use ZodForm as follows:
 
 ```javascript
-const contactSchema = z.object({
-  subject: z.string().min(3),
-  message: z.string().min(10)
-});
-
-// Create a modal form
-app.get('/api/contact-form', (req, res) => {
-  const modal = zodForm.modal(contactSchema, {
-    action: '/api/send-message',
-    title: 'Contact Us',
-    submitLabel: 'Send Message',
-    cancelLabel: 'Cancel'
+app.get('/user-form', (req, res) => {
+  const form = zodForm(userSchema, {
+    action: '/api/submit-user',
+    method: 'POST',
+    submitLabel: 'Create User',
+    theme: 'dark',
+    layout: 'vertical'
   });
   
-  res.send(modal.html);
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>User Form</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        ${form.styles}
+        <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+      </head>
+      <body class="zf-dark">
+        <div class="zf-container">
+          <h1>Create New User</h1>
+          ${form.html}
+          <div id="form-response"></div>
+        </div>
+        ${form.scripts}
+      </body>
+    </html>
+  `);
+});
+```
+
+## Modal Forms with Pug
+
+Using modals with Pug templates is straightforward:
+
+```javascript
+const express = require('express');
+const path = require('path');
+const { z } = require('zod');
+const { zodForm } = require('zod-form');
+
+const app = express();
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Set up Pug as the view engine
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
+
+// Define a contact form schema
+const contactSchema = z.object({
+  subject: z.string().min(3, 'Subject must contain at least 3 characters'),
+  message: z.string().min(10, 'Message must contain at least 10 characters'),
+  priority: z.enum(['low', 'medium', 'high'])
 });
 
-// Use with HTMX
-// <button hx-get="/api/contact-form" hx-target="#modal-container">Contact Us</button>
-// <div id="modal-container"></div>
+// Home page with a button to open the modal
+app.get('/', (req, res) => {
+  res.render('index', {
+    title: 'ZodForm Modal Example'
+  });
+});
+
+// API endpoint to serve the modal form
+app.get('/api/contact-form', (req, res) => {
+  const form = zodForm(contactSchema, {
+    action: '/api/send-message',
+    method: 'POST',
+    submitLabel: 'Send Message'
+  });
+
+  // Render the form using Pug
+  res.render('contact-form', {
+    form: form
+  });
+});
+
+// API endpoint to handle form submission
+app.post('/api/send-message', zodForm.validate(contactSchema), (req, res) => {
+  // If we reach here, validation passed
+  const messageData = req.validatedData;
+  
+  // In a real app, you would save the message to a database
+  console.log('Received valid message:', messageData);
+  
+  // Render success template
+  res.render('success');
+});
+```
+
+### Pug Templates for Modal
+
+Here are the Pug templates for the modal example:
+
+#### `views/index.pug`
+```pug
+extends layout
+
+block content
+  h1 ZodForm Modal Example
+  p Click the button below to open a modal contact form
+  
+  button.button#contact-form-button(hx-get="/api/contact-form" hx-target="#modal-container")
+    | Open Contact Form
+  
+  #modal-container
+
+block scripts
+  script.
+    // Ensure the button works even if HTMX doesn't initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      const contactButton = document.getElementById('contact-form-button');
+      contactButton.addEventListener('click', function() {
+        // Try manual fetch if HTMX isn't working
+        if (!window.htmx || !contactButton.getAttribute('hx-get')) {
+          fetch('/api/contact-form')
+            .then(response => response.text())
+            .then(html => {
+              document.getElementById('modal-container').innerHTML = html;
+            });
+        }
+      });
+    });
+```
+
+#### `views/contact-form.pug`
+```pug
+h1 Contact Us
+!= form.styles
+p Fill out the form below to send us a message.
+!= form.html
+div#form-response
+p
+  a.zf-button.zf-button-secondary(href="/") Back to Home
+!= form.scripts
+```
+
+#### `views/success.pug`
+```pug
+.zf-alert.zf-alert-success
+  h3 Message Sent!
+  p Thank you for your message. We'll get back to you soon.
+  button.zf-button(onclick="this.parentElement.remove()") Close
 ```
 
 ## Firebase Integration

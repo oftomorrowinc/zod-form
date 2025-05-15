@@ -1,0 +1,28 @@
+extends layout
+
+block styles
+  style.
+    body {
+      background-color: #121212;
+      color: rgba(255, 255, 255, 0.87);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  != form.styles
+
+block content
+  h1 Create New User
+  p Fill out the form below to create a new user account.
+  
+  != form.html
+  #form-response
+
+block scripts
+  != form.scripts

@@ -1,8 +1,9 @@
 /**
- * Basic example of ZodForm usage with Express and HTMX
+ * Basic example of ZodForm usage with Express, Pug, and HTMX
  */
 
 const express = require('express');
+const path = require('path');
 const { z } = require('zod');
 
 // Import the library
@@ -16,6 +17,10 @@ process.on('uncaughtException', (err) => {
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Set up Pug as the view engine
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
 
 // Define a Zod schema for a user form
 const userSchema = z.object({
@@ -37,25 +42,11 @@ app.get('/', (req, res) => {
     layout: 'vertical' // or 'horizontal'
   });
 
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>ZodForm Basic Example</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        ${form.styles}
-        <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-      </head>
-      <body class="zf-dark">
-        <div class="zf-container">
-          <h1>Create New User</h1>
-          ${form.html}
-          <div id="form-response"></div>
-        </div>
-        ${form.scripts}
-      </body>
-    </html>
-  `);
+  // Render the form using Pug template
+  res.render('index', {
+    title: 'ZodForm Basic Example',
+    form: form
+  });
 });
 
 // Create an API endpoint for form submission
@@ -68,12 +59,8 @@ app.post('/api/submit-user', zodForm.validate(userSchema), (req, res) => {
 
   // Return a response that HTMX can use
   if (req.headers['hx-request']) {
-    res.send(`
-      <div class="zf-alert zf-alert-success">
-        User created successfully!
-        <pre>${JSON.stringify(userData, null, 2)}</pre>
-      </div>
-    `);
+    // Render success template
+    res.render('success', { userData });
   } else {
     res.redirect('/');
   }

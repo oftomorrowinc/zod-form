@@ -1,7 +1,7 @@
 {
   "name": "zod-form",
   "version": "1.0.0",
-  "description": "An opinionated form generation and validation library for Node.js applications using HTMX, Express, and Zod",
+  "description": "An opinionated form generation and validation library for Node.js applications using HTMX, Express, Pug, and Zod",
   "main": "src/index.js",
   "directories": {
     "example": "examples",
@@ -29,7 +29,8 @@
     "validation",
     "express",
     "htmx",
-    "firebase"
+    "firebase",
+    "pug"
   ],
   "author": "",
   "license": "MIT",
@@ -37,6 +38,7 @@
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
     "multer": "^1.4.5-lts.1",
+    "pug": "^3.0.3",
     "zod": "^3.24.4"
   },
   "devDependencies": {

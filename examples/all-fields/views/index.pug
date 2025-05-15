@@ -1,0 +1,16 @@
+extends layout
+
+block styles
+  != form.styles
+
+block content
+  h1 All Field Types Example
+  p This form showcases all field types supported by ZodForm with enhanced styling.
+  
+  h2.section-title Form Fields
+  != form.html
+  
+  #form-response.form-response
+
+block scripts
+  != form.scripts
